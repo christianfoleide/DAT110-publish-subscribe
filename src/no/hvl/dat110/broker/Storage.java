@@ -94,6 +94,7 @@ public class Storage {
 		// TODO: add the user as subscriber to the topic
 		Set<String> subscribedUsers = subscriptions.get(topic);
 		subscribedUsers.add(user);
+		subscriptions.put(user, subscribedUsers);
 		//throw new UnsupportedOperationException(TODO.method());
 		
 	}
@@ -104,6 +105,7 @@ public class Storage {
 		
 		Set<String> subscribedUsers = subscriptions.get(topic);
 		subscribedUsers.remove(user);
+		subscriptions.put(user, subscribedUsers);
 		
 		//throw new UnsupportedOperationException(TODO.method());
 	}

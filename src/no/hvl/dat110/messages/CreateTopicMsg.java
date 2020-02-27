@@ -10,20 +10,16 @@ public class CreateTopicMsg extends Message {
 	// Constructor, get/set-methods, and toString method
     // as described in the project text	
 	
-	private String user;
 	private String topic;
 	
 	
 	public CreateTopicMsg() {}
 	
 	public CreateTopicMsg(String user, String topic) {
-		this.user = user;
+		super(MessageType.CREATETOPIC, user);
 		this.topic = topic;
 	}
 	
-	public String getUser() {
-		return user;
-	}
 	
 	public String getTopic() {
 		return topic;
@@ -33,8 +29,11 @@ public class CreateTopicMsg extends Message {
 		this.topic = topic;
 	}
 	
-	public void setUser(String user) {
-		this.user = user;
+	@Override
+	public String toString() {
+		return "[Create Topic Message - topic: " + topic + "]\n";
 	}
+	
+
 	
 }
