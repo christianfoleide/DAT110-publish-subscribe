@@ -1,11 +1,13 @@
 package no.hvl.dat110.broker;
 
 import java.util.Collection;
+import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import no.hvl.dat110.common.TODO;
+import no.hvl.dat110.messages.Message;
 import no.hvl.dat110.common.Logger;
 import no.hvl.dat110.messagetransport.Connection;
 
@@ -19,10 +21,13 @@ public class Storage {
 	// maps from user to corresponding client session object
 	
 	protected ConcurrentHashMap<String, ClientSession> clients;
+					     // Key = disconnected user, Value = "Missed" messages while disconnected
+	protected ConcurrentHashMap<String, Set<Message>> disconnectedUsers;
 
 	public Storage() {
 		subscriptions = new ConcurrentHashMap<String, Set<String>>();
 		clients = new ConcurrentHashMap<String, ClientSession>();
+		disconnectedUsers = new ConcurrentHashMap<String, Set<Message>>();
 	}
 
 	public Collection<ClientSession> getSessions() {
@@ -34,7 +39,43 @@ public class Storage {
 		return subscriptions.keySet();
 
 	}
+	
+	// ------------------- TASK E ---------------------
+	
+	//returns a set of disconnected users, for unit testing
+	
+	public Set<String> getDisconnectedUsers() {
+		return disconnectedUsers.keySet();
+	}
+	
+	
+	//returns true if the user (param) is disconnected
+	public boolean isDisconnected(String user) {
+		return disconnectedUsers.containsKey(user);
+	}
+	
+	//returns a set of missed buffered messages that was added while user (param) was disconnected
+	public Set<Message> getMissedMessages(String user) {
+		
+		return disconnectedUsers.get(user);		
+	}
+	
+	//buffers messages to the user (param) if this user is disconnected (present in the disconnectedUsers map)
+	public boolean addMessageToDisconnectedUser(String user, Message message) {
+		Set<Message> messages = disconnectedUsers.get(user);
+		
+		if (messages != null) {
+		
+			messages.add(message);
+			disconnectedUsers.put(user, messages);
+			return true;
+		
+		}
+		return false;
+	}
 
+	// ------------------- TASK E ---------------------
+	
 	// get the session object for a given user
 	// session object can be used to send a message to the user
 	
@@ -53,7 +94,13 @@ public class Storage {
 
 	public void addClientSession(String user, Connection connection) {
 
+		if (disconnectedUsers.containsKey(user)) {
+			disconnectedUsers.remove(user);
+		}
+		
 		ClientSession cs = new ClientSession(user, connection);
+		
+		
 		
 		clients.put(cs.getUser(), cs);
 
@@ -61,6 +108,7 @@ public class Storage {
 		
 	public void removeClientSession(String user) {
 		
+		disconnectedUsers.put(user, new HashSet<Message>());
 		clients.remove(user);
 
 	}

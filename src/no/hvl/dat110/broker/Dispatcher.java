@@ -90,9 +90,33 @@ public class Dispatcher extends Stopable {
 		String user = msg.getUser();
 
 		Logger.log("onConnect:" + msg.toString());
-
-		storage.addClientSession(user, connection);
-
+		
+		//if user is present in the disconnectedUsers-map, send the buffered messages and remove the user
+		//from the map.
+				
+		
+		
+		if (storage.isDisconnected(user)) {
+					
+			Set<Message> missedMessages = storage.getMissedMessages(user);
+			
+			storage.addClientSession(user, connection);
+			ClientSession prevUser = storage.getSession(user);
+			
+			missedMessages.forEach( message -> {
+				try {
+					prevUser.send(message);
+					Thread.sleep(100);
+				} catch(InterruptedException e) {
+					e.printStackTrace();
+				}
+			});
+			
+					
+		} else {
+			storage.addClientSession(user, connection);
+		}
+				
 	}
 
 	// called by dispatch upon receiving a disconnect message
@@ -101,7 +125,8 @@ public class Dispatcher extends Stopable {
 		String user = msg.getUser();
 
 		Logger.log("onDisconnect:" + msg.toString());
-
+		 
+		//adds user to map of disconnected users upon disconnection
 		storage.removeClientSession(user);
 
 	}
@@ -149,12 +174,18 @@ public class Dispatcher extends Stopable {
 		
 		subscribers.forEach( sub -> {
 			
-			ClientSession subSession = storage.getSession(sub);
-			subSession.send(msg);
+			//if the subscriber is disconnected, add the message (param) to his buffered ("missing") messages set
+			if (storage.isDisconnected(sub)) {
+				storage.addMessageToDisconnectedUser(sub, msg);
+				Logger.log("User " + sub + " is disconnected, adding message to his buffered messages.");
+			} else {
+			
+				ClientSession subSession = storage.getSession(sub);
+				subSession.send(msg);
+							
+			}
 			
 		});
 		
-	
-
 	}
 }
